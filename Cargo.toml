@@ -1,0 +1,25 @@
+[package]
+name = "ssr-gtk"
+version = "0.1.0"
+authors = ["gmg137 <gmg137@live.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "*"
+url = "*"
+reqwest = "*"
+gtk = "*"
+gio = "*"
+glib = "*"
+lazy_static = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+crossbeam-channel = "*"
+dirs = "*"
+pango = "*"
+sled = "*"
+screenshot-rs = "*"
+image = "*"
+bardecoder = { git = "https://github.com/piderman314/bardecoder.git", version = "*" }
