@@ -260,7 +260,7 @@ impl Header {
                 let dialog = upgrade_weak!(dialog_weak);
                 if let Some(url) = upgrade_weak!(entry_weak).get_text(){
                     if !url.is_empty(){
-                        sender_clone.send(Action::Subscription(url.to_owned())).unwrap_or(());
+                        sender_clone.send(Action::SubscriptionInit(url.to_owned())).unwrap_or(());
                     }
                 }
                 dialog.hide();

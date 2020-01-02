@@ -36,8 +36,8 @@ pub fn add_qrcode() -> Option<(u8, Vec<(String, Option<String>, Vec<SsrConfig>)>
 }
 
 // 添加订阅
-pub fn add_sub(url: String) -> Option<Vec<(String, Option<String>, Vec<SsrConfig>)>> {
-    let configs = ssr_sub_url_parse(&url).ok()?;
+pub async fn add_sub(url: String) -> Option<Vec<(String, Option<String>, Vec<SsrConfig>)>> {
+    let configs = ssr_sub_url_parse(&url).await.ok()?;
     let mut data = Data::new();
     data.add_sub(url, configs.get(0)?.group.to_owned(), configs)
 }
@@ -311,8 +311,8 @@ pub fn ssr_url_parse(url: String) -> Option<SsrConfig> {
 }
 
 // 解析 SSR 定阅链接
-pub fn ssr_sub_url_parse(url: &str) -> Result<Vec<SsrConfig>, reqwest::Error> {
-    let body = reqwest::get(url)?.text()?;
+pub async fn ssr_sub_url_parse(url: &str) -> Result<Vec<SsrConfig>, surf::Exception> {
+    let body: String = surf::get(url).recv_string().await?;
     let body = String::from_utf8_lossy(
         &base64::decode_config(&body, base64::URL_SAFE).unwrap_or_else(|_| vec![]),
     )

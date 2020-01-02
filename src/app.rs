@@ -22,11 +22,13 @@ use std::env;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread::spawn;
+use async_std::task;
 
 #[derive(Debug, Clone)]
 pub(crate) enum Action {
     ConnectSSR,
-    Subscription(String),
+    Subscription(Vec<(String, Option<String>, Vec<SsrConfig>)>),
+    SubscriptionInit(String),
     AddSSRUrl(String),
     AddConfig(SsrConfig),
     RefreshSsrListView(u8),
@@ -141,15 +143,23 @@ impl App {
                         .unwrap_or(());
                 }
             }
-            Action::Subscription(url) => {
-                if let Some(configs) = add_sub(url) {
+            Action::Subscription(configs) => {
                     self.view
                         .update_home_sidebar((configs.len() - 1) as u8, &configs);
-                } else {
-                    self.sender
-                        .send(Action::ShowNotice("添加订阅失败!".to_owned()))
-                        .unwrap_or(());
-                }
+            }
+            Action::SubscriptionInit(url) => {
+                let sender = self.sender.clone();
+                task::spawn(async move {
+                    if let Some(configs) = add_sub(url).await {
+                        sender
+                            .send(Action::Subscription(configs))
+                            .unwrap_or(());
+                    } else {
+                        sender
+                            .send(Action::ShowNotice("添加订阅失败!".to_owned()))
+                            .unwrap_or(());
+                    }
+                });
             }
             Action::AddSSRUrl(url) => {
                 if let Some((group_id, configs)) = add_ssr_url(url) {
@@ -183,10 +193,10 @@ impl App {
                     let db = Data::new();
                     if let Some(mut configs) = db.get_all() {
                         let sender_clone = self.sender.clone();
-                        spawn(move || {
+                        task::spawn(async move {
                             if let Some(value) = configs.get(id as usize) {
                                 if let Ok(config) =
-                                    ssr_sub_url_parse(&value.1.as_ref().unwrap_or(&String::new()))
+                                    ssr_sub_url_parse(&value.1.as_ref().unwrap_or(&String::new())).await
                                 {
                                     configs[id as usize] =
                                         (value.0.to_owned(), value.1.to_owned(), config);

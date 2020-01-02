@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 base64 = "*"
 url = "*"
-reqwest = "*"
 gtk = "*"
 gio = "*"
 glib = "*"
@@ -23,3 +22,5 @@ sled = "*"
 screenshot-rs = "*"
 image = "*"
 bardecoder = { git = "https://github.com/piderman314/bardecoder.git", version = "*" }
+surf = "*"
+async-std = "*"
