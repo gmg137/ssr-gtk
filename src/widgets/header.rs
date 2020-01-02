@@ -250,6 +250,15 @@ impl Header {
                 dialog.hide();
             }));
 
+        // 订阅输入框激活
+        let sub_button_weak = s.subscription_dialog.sub_button.downgrade();
+        s.subscription_dialog
+            .url_entry
+            .connect_activate(clone!(sub_button_weak=>move|_| {
+                let sub_button = upgrade_weak!(sub_button_weak);
+                sub_button.emit_clicked();
+            }));
+
         // 订阅按钮
         let sender_clone = sender.clone();
         let dialog_weak = s.subscription_dialog.dialog.downgrade();
@@ -273,6 +282,15 @@ impl Header {
                 let dialog = upgrade_weak!(dialog_weak);
                 dialog.run();
                 dialog.hide();
+            }));
+
+        // 添加URL输入框激活
+        let add_button_weak = s.addurl_dialog.add_button.downgrade();
+        s.addurl_dialog
+            .ssr_entry
+            .connect_activate(clone!(add_button_weak=>move|_| {
+                let add_button = upgrade_weak!(add_button_weak);
+                add_button.emit_clicked();
             }));
 
         // 添加按钮
