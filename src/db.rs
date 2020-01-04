@@ -14,7 +14,7 @@ pub struct Data {
 impl Data {
     pub fn new() -> Self {
         Data {
-            db: Db::open(format!("{}/db", CONFIG_PATH.to_owned())),
+            db: sled::open(format!("{}/db", CONFIG_PATH.to_owned())),
         }
     }
 

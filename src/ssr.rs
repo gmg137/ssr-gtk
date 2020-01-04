@@ -4,18 +4,18 @@
 // Distributed under terms of the GPLv3 license.
 //
 use crate::db::Data;
+use async_std::{io, net::TcpStream};
 use image::load_from_memory;
 use screenshot_rs::screenshot_area;
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
-    net::ToSocketAddrs,
     fs,
+    net::ToSocketAddrs,
     path::Path,
     process::{Command, Stdio},
-    time::{Duration, Instant},
+    time::Instant,
 };
-use async_std::{io, future, net::TcpStream};
 
 // 扫码添加
 pub fn add_qrcode() -> Option<(u8, Vec<(String, Option<String>, Vec<SsrConfig>)>)> {
@@ -66,7 +66,7 @@ pub async fn timeout(host: String, port: String) -> io::Result<u16> {
     let now = Instant::now();
     let addrs = format!("{}:{}", host, port).to_socket_addrs()?;
     for addr in addrs {
-       let t = if TcpStream::connect(&addr).await.is_ok() {
+        let t = if TcpStream::connect(&addr).await.is_ok() {
             now.elapsed().as_millis() as u16
         } else {
             9999
@@ -181,6 +181,7 @@ impl Default for SsrConfig {
     }
 }
 
+#[allow(dead_code)]
 impl SsrConfig {
     pub fn set_remote_addr(mut self, remote_addr: &str) -> Self {
         self.remote_addr = remote_addr.to_owned();

@@ -17,13 +17,13 @@ use crate::{
     view::*,
     widgets::{mark_all_notif, notice::InAppNotification},
 };
+use async_std::{future, task};
+use futures::stream::{FuturesUnordered, StreamExt};
 use std::cell::RefCell;
 use std::env;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use async_std::{future, task};
-use futures::stream::{FuturesUnordered, StreamExt};
 
 #[derive(Debug, Clone)]
 pub(crate) enum Action {
@@ -145,16 +145,14 @@ impl App {
                 }
             }
             Action::Subscription(configs) => {
-                    self.view
-                        .update_home_sidebar((configs.len() - 1) as u8, &configs);
+                self.view
+                    .update_home_sidebar((configs.len() - 1) as u8, &configs);
             }
             Action::SubscriptionInit(url) => {
                 let sender = self.sender.clone();
                 task::spawn(async move {
                     if let Some(configs) = add_sub(url).await {
-                        sender
-                            .send(Action::Subscription(configs))
-                            .unwrap_or(());
+                        sender.send(Action::Subscription(configs)).unwrap_or(());
                     } else {
                         sender
                             .send(Action::ShowNotice("添加订阅失败!".to_owned()))
@@ -197,7 +195,8 @@ impl App {
                         task::spawn(async move {
                             if let Some(value) = configs.get(id as usize) {
                                 if let Ok(config) =
-                                    ssr_sub_url_parse(&value.1.as_ref().unwrap_or(&String::new())).await
+                                    ssr_sub_url_parse(&value.1.as_ref().unwrap_or(&String::new()))
+                                        .await
                                 {
                                     configs[id as usize] =
                                         (value.0.to_owned(), value.1.to_owned(), config);
@@ -237,19 +236,20 @@ impl App {
                                     let port = config.remote_port.to_owned();
                                     cf.push(future::timeout(
                                         Duration::from_secs(3),
-                                        timeout(host,port)));
+                                        timeout(host, port),
+                                    ));
                                 }
                                 for config in value.2.iter_mut() {
                                     if let Some(t) = cf.next().await {
                                         match t {
                                             Ok(t) => match t {
                                                 Ok(time) => config.delay = format!("{} ms", time),
-                                                Err(_) => config.delay = String::from("超时")
+                                                Err(_) => config.delay = String::from("超时"),
                                             },
-                                            Err(_) => config.delay = String::from("超时")
+                                            Err(_) => config.delay = String::from("超时"),
                                         }
                                     }
-                                };
+                                }
                                 sender_clone.send(Action::Speed(configs)).unwrap_or(());
                             }
                         });
