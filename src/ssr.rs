@@ -37,9 +37,12 @@ pub fn add_qrcode() -> Option<(u8, Vec<(String, Option<String>, Vec<SsrConfig>)>
 
 // 添加订阅
 pub async fn add_sub(url: String) -> Option<Vec<(String, Option<String>, Vec<SsrConfig>)>> {
-    let configs = ssr_sub_url_parse(&url).await.ok()?;
-    let mut data = Data::new();
-    data.add_sub(url, configs.get(0)?.group.to_owned(), configs)
+    if url.starts_with("http://") || url.starts_with("https://") {
+        let configs = ssr_sub_url_parse(&url).await.ok()?;
+        let mut data = Data::new();
+        return data.add_sub(url, configs.get(0)?.group.to_owned(), configs);
+    }
+    None
 }
 
 // 添加 SSR 链接
