@@ -9,12 +9,13 @@ use screenshot_rs::screenshot_area;
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
+    net::ToSocketAddrs,
     fs,
-    net::{TcpStream, ToSocketAddrs},
     path::Path,
     process::{Command, Stdio},
-    time::{Duration, SystemTime},
+    time::{Duration, Instant},
 };
+use async_std::{io, future, net::TcpStream};
 
 // 扫码添加
 pub fn add_qrcode() -> Option<(u8, Vec<(String, Option<String>, Vec<SsrConfig>)>)> {
@@ -61,18 +62,20 @@ pub fn is_run() -> bool {
 }
 
 // 测试延迟
-pub fn timeout(config: &SsrConfig) -> Option<u16> {
-    let now = SystemTime::now();
-    if let Ok(addrs) = format!("{}:{}", config.remote_addr, config.remote_port).to_socket_addrs() {
-        for addr in addrs {
-            if TcpStream::connect_timeout(&addr, Duration::from_millis(1000)).is_ok() {
-                if let Ok(elapsed) = now.elapsed() {
-                    return Some(elapsed.as_millis() as u16);
-                }
-            }
+pub async fn timeout(host: String, port: String) -> io::Result<u16> {
+    let now = Instant::now();
+    let addrs = format!("{}:{}", host, port).to_socket_addrs()?;
+    for addr in addrs {
+       let t = if TcpStream::connect(&addr).await.is_ok() {
+            now.elapsed().as_millis() as u16
+        } else {
+            9999
+        };
+        if t < 9999 {
+            return Ok(t);
         }
     }
-    None
+    Err(io::Error::last_os_error())
 }
 
 // 关闭 SSR 连接

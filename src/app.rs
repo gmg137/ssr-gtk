@@ -21,8 +21,9 @@ use std::cell::RefCell;
 use std::env;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use std::thread::spawn;
-use async_std::task;
+use std::time::Duration;
+use async_std::{future, task};
+use futures::stream::{FuturesUnordered, StreamExt};
 
 #[derive(Debug, Clone)]
 pub(crate) enum Action {
@@ -228,15 +229,27 @@ impl App {
                     let db = Data::new();
                     if let Some(mut configs) = db.get_all() {
                         let sender_clone = self.sender.clone();
-                        spawn(move || {
+                        task::spawn(async move {
                             if let Some(value) = configs.get_mut(id as usize) {
-                                value.2.iter_mut().for_each(|config| {
-                                    if let Some(time) = timeout(config) {
-                                        config.delay = format!("{} ms", time);
-                                    } else {
-                                        config.delay = String::from("超时");
+                                let mut cf = FuturesUnordered::new();
+                                for config in &value.2 {
+                                    let host = config.remote_addr.to_owned();
+                                    let port = config.remote_port.to_owned();
+                                    cf.push(future::timeout(
+                                        Duration::from_secs(3),
+                                        timeout(host,port)));
+                                }
+                                for config in value.2.iter_mut() {
+                                    if let Some(t) = cf.next().await {
+                                        match t {
+                                            Ok(t) => match t {
+                                                Ok(time) => config.delay = format!("{} ms", time),
+                                                Err(_) => config.delay = String::from("超时")
+                                            },
+                                            Err(_) => config.delay = String::from("超时")
+                                        }
                                     }
-                                });
+                                };
                                 sender_clone.send(Action::Speed(configs)).unwrap_or(());
                             }
                         });
