@@ -6,7 +6,6 @@
 
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use gio::{self, prelude::*};
-use glib;
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, Builder, Overlay};
 
@@ -17,8 +16,8 @@ use crate::{
     view::*,
     widgets::{mark_all_notif, notice::InAppNotification},
 };
-use async_std::{future, task};
 use futures::stream::{FuturesUnordered, StreamExt};
+use smol_timeout::TimeoutExt;
 use std::cell::RefCell;
 use std::env;
 use std::rc::Rc;
@@ -72,7 +71,7 @@ impl App {
         window.set_title("SSR-GTK");
 
         let view = View::new(&builder, &sender, data.clone());
-        let header = Header::new(&builder, &sender, data.clone());
+        let header = Header::new(&builder, &sender, data);
 
         window.show_all();
 
@@ -84,7 +83,7 @@ impl App {
             };
 
             app.quit();
-            return Inhibit(false);
+            Inhibit(false)
         });
 
         let overlay: Overlay = builder.get_object("overlay").unwrap();
@@ -150,7 +149,7 @@ impl App {
             }
             Action::SubscriptionInit(url) => {
                 let sender = self.sender.clone();
-                task::spawn(async move {
+                smol::Task::spawn(async move {
                     if let Some(configs) = add_sub(url).await {
                         sender.send(Action::Subscription(configs)).unwrap_or(());
                     } else {
@@ -158,7 +157,8 @@ impl App {
                             .send(Action::ShowNotice("添加订阅失败!".to_owned()))
                             .unwrap_or(());
                     }
-                });
+                })
+                .detach();
             }
             Action::AddSSRUrl(url) => {
                 if let Some((group_id, configs)) = add_ssr_url(url) {
@@ -192,7 +192,7 @@ impl App {
                     let db = Data::new();
                     if let Some(mut configs) = db.get_all() {
                         let sender_clone = self.sender.clone();
-                        task::spawn(async move {
+                        smol::Task::spawn(async move {
                             if let Some(value) = configs.get(id as usize) {
                                 if let Ok(config) =
                                     ssr_sub_url_parse(&value.1.as_ref().unwrap_or(&String::new()))
@@ -207,7 +207,8 @@ impl App {
                                         .unwrap_or(());
                                 }
                             }
-                        });
+                        })
+                        .detach();
                     }
                 }
             }
@@ -228,31 +229,29 @@ impl App {
                     let db = Data::new();
                     if let Some(mut configs) = db.get_all() {
                         let sender_clone = self.sender.clone();
-                        task::spawn(async move {
+                        smol::Task::spawn(async move {
                             if let Some(value) = configs.get_mut(id as usize) {
                                 let mut cf = FuturesUnordered::new();
                                 for config in &value.2 {
                                     let host = config.remote_addr.to_owned();
                                     let port = config.remote_port.to_owned();
-                                    cf.push(future::timeout(
-                                        Duration::from_secs(3),
-                                        timeout(host, port),
-                                    ));
+                                    cf.push(timeout(host, port).timeout(Duration::from_secs(3)));
                                 }
                                 for config in value.2.iter_mut() {
                                     if let Some(t) = cf.next().await {
                                         match t {
-                                            Ok(t) => match t {
+                                            Some(t) => match t {
                                                 Ok(time) => config.delay = format!("{} ms", time),
                                                 Err(_) => config.delay = String::from("超时"),
                                             },
-                                            Err(_) => config.delay = String::from("超时"),
+                                            None => config.delay = String::from("超时"),
                                         }
                                     }
                                 }
                                 sender_clone.send(Action::Speed(configs)).unwrap_or(());
                             }
-                        });
+                        })
+                        .detach();
                     }
                 }
             }

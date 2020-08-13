@@ -4,10 +4,12 @@
 // Distributed under terms of the GPLv3 license.
 //
 use crate::db::Data;
-use async_std::{io, net::TcpStream};
+use async_net::TcpStream;
 use image::load_from_memory;
+use isahc::prelude::*;
 use screenshot_rs::screenshot_area;
 use serde::{Deserialize, Serialize};
+use smol::io;
 use std::{
     borrow::Cow,
     fs,
@@ -25,7 +27,7 @@ pub fn add_qrcode() -> Option<(u8, Vec<(String, Option<String>, Vec<SsrConfig>)>
         fs::remove_file(image_path).unwrap_or(());
         if let Ok(image) = load_from_memory(&buffer) {
             let decoder = bardecoder::default_decoder();
-            let results = decoder.decode(image);
+            let results = decoder.decode(&image);
             for result in results {
                 if let Ok(ssr_str) = result {
                     return add_ssr_url(ssr_str);
@@ -318,8 +320,8 @@ pub fn ssr_url_parse(url: String) -> Option<SsrConfig> {
 }
 
 // 解析 SSR 定阅链接
-pub async fn ssr_sub_url_parse(url: &str) -> Result<Vec<SsrConfig>, surf::Exception> {
-    let body: String = surf::get(url).recv_string().await?;
+pub async fn ssr_sub_url_parse(url: &str) -> Result<Vec<SsrConfig>, isahc::Error> {
+    let body: String = isahc::get_async(url).await?.text()?;
     let body = String::from_utf8_lossy(
         &base64::decode_config(&body, base64::URL_SAFE).unwrap_or_else(|_| vec![]),
     )

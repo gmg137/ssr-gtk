@@ -98,5 +98,7 @@ macro_rules! upgrade_weak {
 fn main() {
     gtk::init().expect("Error initializing gtk.");
 
-    App::run();
+    smol::run(async {
+        App::run();
+    });
 }
