@@ -267,10 +267,9 @@ impl Header {
             .sub_button
             .connect_clicked(clone!(dialog_weak,entry_weak=>move|_| {
                 let dialog = upgrade_weak!(dialog_weak);
-                if let Some(url) = upgrade_weak!(entry_weak).get_text(){
-                    if !url.is_empty(){
-                        sender_clone.send(Action::SubscriptionInit(url.to_owned())).unwrap_or(());
-                    }
+                let url = upgrade_weak!(entry_weak).get_text();
+                if !url.is_empty(){
+                    sender_clone.send(Action::SubscriptionInit(url.to_owned())).unwrap_or(());
                 }
                 dialog.hide();
             }));
@@ -301,10 +300,9 @@ impl Header {
             .add_button
             .connect_clicked(clone!(dialog_weak,entry_weak=>move|_| {
                 let dialog = upgrade_weak!(dialog_weak);
-                if let Some(url) = upgrade_weak!(entry_weak).get_text(){
-                    if !url.is_empty(){
-                        sender_clone.send(Action::AddSSRUrl(url.to_owned())).unwrap_or(());
-                    }
+                let url = upgrade_weak!(entry_weak).get_text();
+                if !url.is_empty(){
+                    sender_clone.send(Action::AddSSRUrl(url.to_owned())).unwrap_or(());
                 }
                 dialog.hide();
             }));
@@ -347,50 +345,26 @@ impl Header {
                     method_weak,method_weak,protocol_weak,protoparam_weak,
                     obfs_weak,obfsparam_weak=>move|_| {
                 let dialog = upgrade_weak!(dialog_weak);
-                let remote_addr = match upgrade_weak!(server_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::new()
-                };
-                let remote_port = match upgrade_weak!(remote_port_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::new()
-                };
-                let local_port = match upgrade_weak!(local_port_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::new()
-                };
+                let remote_addr = upgrade_weak!(server_weak).get_text().to_string();
+                let remote_port = upgrade_weak!(remote_port_weak).get_text().to_string();
+                let local_port = upgrade_weak!(local_port_weak).get_text().to_string();
                 let method = match upgrade_weak!(method_weak).get_active_text() {
                     Some(text) => text.to_owned(),
                     None => String::new()
                 };
-                let password = match upgrade_weak!(password_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::new()
-                };
+                let password = upgrade_weak!(password_weak).get_text().to_string();
                 let protocol = match upgrade_weak!(protocol_weak).get_active_text() {
                     Some(text) => text.to_owned(),
                     None => String::new()
                 };
-                let protoparam = match upgrade_weak!(protoparam_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::new()
-                };
+                let protoparam = upgrade_weak!(protoparam_weak).get_text().to_string();
                 let obfs = match upgrade_weak!(obfs_weak).get_active_text() {
                     Some(text) => text.to_owned(),
                     None => String::new()
                 };
-                let obfsparam = match upgrade_weak!(obfsparam_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::new()
-                };
-                let remarks = match upgrade_weak!(configname_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::from("未命名")
-                };
-                let group = match upgrade_weak!(group_weak).get_text() {
-                    Some(text) => text.to_owned(),
-                    None => String::from("默认")
-                };
+                let obfsparam = upgrade_weak!(obfsparam_weak).get_text().to_string();
+                let remarks = upgrade_weak!(configname_weak).get_text().to_string();
+                let group = upgrade_weak!(group_weak).get_text().to_string();
                 sender_clone.send(Action::AddConfig(SsrConfig{
                     local_addr: "127.0.0.1".to_owned(),
                     timeout: "300".to_owned(),

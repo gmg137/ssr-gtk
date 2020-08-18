@@ -62,7 +62,7 @@ impl App {
         let data = Arc::new(Mutex::new(0u8));
 
         let glade_src = include_str!("../ui/window.glade");
-        let builder = Builder::new_from_string(glade_src);
+        let builder = Builder::from_string(glade_src);
 
         let window: ApplicationWindow = builder
             .get_object("applicationwindow")

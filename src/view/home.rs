@@ -166,8 +166,7 @@ impl Home {
             //setting.set_margin_top(5);
             //setting.set_margin_bottom(5);
             //gtkbox.add(&setting);
-            let remove =
-                Button::new_from_icon_name(Some("user-trash-symbolic"), gtk::IconSize::Button);
+            let remove = Button::from_icon_name(Some("user-trash-symbolic"), gtk::IconSize::Button);
             remove.set_margin_start(5);
             remove.set_margin_top(5);
             remove.set_margin_bottom(5);

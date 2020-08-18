@@ -3,8 +3,6 @@
 // Copyright (C) 2019 gmg137 <gmg137@live.com>
 // Distributed under terms of the GPLv3 license.
 //
-use glib;
-use gtk;
 use gtk::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -30,7 +28,7 @@ pub(crate) struct InAppNotification {
 impl Default for InAppNotification {
     fn default() -> Self {
         let glade_src = include_str!("../../ui/inapp_notif.ui");
-        let builder = gtk::Builder::new_from_string(glade_src);
+        let builder = gtk::Builder::from_string(glade_src);
 
         let revealer: gtk::Revealer = builder.get_object("revealer").unwrap();
         let text: gtk::Label = builder.get_object("text").unwrap();
@@ -80,6 +78,6 @@ impl InAppNotification {
     }
 
     pub(crate) fn destroy(self) {
-        self.revealer.destroy();
+        self.revealer.set_reveal_child(false)
     }
 }
