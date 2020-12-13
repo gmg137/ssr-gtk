@@ -104,7 +104,7 @@ impl App {
 
     fn init(app: &Rc<Self>) {
         // Setup the Action channel
-        gtk::timeout_add(25, crate::clone!(app => move || app.setup_action_channel()));
+        glib::timeout_add_local(25, crate::clone!(app => move || app.setup_action_channel()));
     }
 
     fn setup_action_channel(&self) -> glib::Continue {
